@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Project specific
+.YT_log/
+resume_state.json
+channel_history.json
+directory_durations.json
+
+# Downloads (in case they are in the same dir)
+YT_feed/
+YT_music/
+YT_playlist/
+YT_podcasts/
+
+# Environment
+.env
+.venv
+env/
+venv/
+virtualenv/
