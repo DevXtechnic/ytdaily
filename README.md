@@ -59,7 +59,7 @@ chmod +x install.sh
 ### What the installer does:
 - Checks for and installs `yt-dlp`, `ffmpeg`, and `python-rich` using your native package manager.
 - Sets up a robust directory structure in `~/.local/share/yt-daily/`.
-- Injects `ytdaily` aliases into your shell (`bash`, `zsh`, or `fish`).
+- Injects `Ytdaily` aliases into your shell (`bash`, `zsh`, or `fish`).
 - **Initializes the Automation Engine (Systemd).**
 
 ---
@@ -74,7 +74,7 @@ After installation, `yt-daily` operates as a silent background service.
 
 You can check the status of your automated downloader at any time:
 ```bash
-systemctl --user status ytdaily.service
+systemctl --user status Ytdaily.service
 ```
 
 ---

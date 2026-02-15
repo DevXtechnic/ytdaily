@@ -64,36 +64,36 @@ cp YT_daily.py "$INSTALL_DIR/YT_daily.py"
 chmod +x "$INSTALL_DIR/YT_daily.py"
 
 # 5. Create a binary link/launcher
-echo -e "${BLUE}🔨 Creating launcher in $BIN_DIR/ytdaily...${NC}"
-cat <<EOF > "$BIN_DIR/ytdaily"
+echo -e "${BLUE}🔨 Creating launcher in $BIN_DIR/Ytdaily...${NC}"
+cat <<EOF > "$BIN_DIR/Ytdaily"
 #!/bin/bash
 python3 "$INSTALL_DIR/YT_daily.py" "\$@"
 EOF
-chmod +x "$BIN_DIR/ytdaily"
+chmod +x "$BIN_DIR/Ytdaily"
 
 # 6. Setup Shell Aliases
 echo -e "${BLUE}🐚 Setting up shell aliases...${NC}"
 
 # Bash
 if [ -f "$HOME/.bashrc" ]; then
-    if ! grep -q "alias ytdaily=" "$HOME/.bashrc"; then
-        echo "alias ytdaily='$BIN_DIR/ytdaily --interactive'" >> "$HOME/.bashrc"
+    if ! grep -q "alias Ytdaily=" "$HOME/.bashrc"; then
+        echo "alias Ytdaily='$BIN_DIR/Ytdaily --interactive'" >> "$HOME/.bashrc"
     fi
 fi
 
 # Zsh
 if [ -f "$HOME/.zshrc" ]; then
-    if ! grep -q "alias ytdaily=" "$HOME/.zshrc"; then
-        echo "alias ytdaily='$BIN_DIR/ytdaily --interactive'" >> "$HOME/.zshrc"
+    if ! grep -q "alias Ytdaily=" "$HOME/.zshrc"; then
+        echo "alias Ytdaily='$BIN_DIR/Ytdaily --interactive'" >> "$HOME/.zshrc"
     fi
 fi
 
 # Fish
 if command -v fish >/dev/null; then
     mkdir -p "$HOME/.config/fish/functions"
-    cat <<EOF > "$HOME/.config/fish/functions/ytdaily.fish"
-function ytdaily
-    $BIN_DIR/ytdaily --interactive \$argv
+    cat <<EOF > "$HOME/.config/fish/functions/Ytdaily.fish"
+function Ytdaily
+    $BIN_DIR/Ytdaily --interactive \$argv
 end
 EOF
 fi
@@ -110,7 +110,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$BIN_DIR/ytdaily
+ExecStart=$BIN_DIR/Ytdaily
 Nice=19
 IOSchedulingClass=idle
 
@@ -138,5 +138,5 @@ systemctl --user enable ytdaily.timer
 systemctl --user start ytdaily.timer
 
 echo -e "${GREEN}✅ Installation complete!${NC}"
-echo -e "${GREEN}👉 You can now run 'ytdaily' from your terminal.${NC}"
+echo -e "${GREEN}👉 You can now run 'Ytdaily' from your terminal.${NC}"
 echo -e "${BLUE}Note: You might need to restart your terminal or run 'source ~/.bashrc' (or .zshrc) to use the alias immediately.${NC}"
