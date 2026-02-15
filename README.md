@@ -2,6 +2,20 @@
 
 A powerful, interactive YouTube Feed Downloader that monitors channels and playlists for new content and downloads them automatically in any desired quality (360p, 480p, 720p, 1080p, 1440p, 2160p) with subtitles, SponsorBlock, and parallel download support.
 
+## Visual Tour
+
+| Main Menu | Configuration & Scan |
+| :---: | :---: |
+| ![Main Menu](screenshots/main_menu.png) | ![Config & Scan](screenshots/config_scan.png) |
+
+| Channel Management | Adding a Channel |
+| :---: | :---: |
+| ![Channel Management](screenshots/channel_mgmt.png) | ![Add Channel](screenshots/add_channel.png) |
+
+| Scan Results |
+| :---: |
+| ![Scan Results](screenshots/scan_results.png) |
+
 ## Features
 
 - 🚀 **Smart Channel Tracking**: Automatically detects and downloads new videos from your followed channels.
