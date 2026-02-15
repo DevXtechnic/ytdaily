@@ -1,0 +1,11 @@
+[Unit]
+Description=YTDaily Feed Downloader
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Update these to your user and path
+User=%u
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/bin/python3 /path/to/YT_daily.py

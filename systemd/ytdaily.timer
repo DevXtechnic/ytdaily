@@ -1,0 +1,12 @@
+[Unit]
+Description=Run YTDaily once per day
+
+[Timer]
+# Run 5 minutes after boot
+OnBootSec=5min
+# Ensure it runs even if the machine was off
+Persistent=true
+AccuracySec=1h
+
+[Install]
+WantedBy=timers.target

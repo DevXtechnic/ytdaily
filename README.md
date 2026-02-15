@@ -41,7 +41,7 @@ A powerful, interactive YouTube Feed Downloader that monitors channels and playl
 Run the script in interactive mode to manage your channels and settings:
 
 ```bash
-python3 YT_daily2.py --interactive
+python3 YT_daily.py --interactive
 ```
 
 ### Options:
@@ -50,6 +50,18 @@ python3 YT_daily2.py --interactive
 - **Manage playlists**: Track large playlists for new updates.
 - **Download single video/audio**: One-off downloads via URL.
 - **Settings**: Configure parallel downloads, quality, and more.
+
+## Automation (Linux/Systemd)
+
+To make the script run automatically once per day:
+
+1. Copy the files from the `systemd/` directory to `/etc/systemd/system/`.
+2. Edit `/etc/systemd/system/ytdaily.service` to update the `User` and `ExecStart` path.
+3. Enable and start the timer:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now ytdaily.timer
+   ```
 
 ## Configuration
 
