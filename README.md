@@ -32,7 +32,7 @@
 
 ## 🛠️ How it Works: The Architecture
 
-`yt-daily` is built on a "Silent Automation" philosophy. It uses a **State-Based Tracking System** to ensure you never miss a video and never download a duplicate.
+`Ytdaily` is built on a "Silent Automation" philosophy. It uses a **State-Based Tracking System** to ensure you never miss a video and never download a duplicate.
 
 ### 1. The Intelligent Monitor
 The engine maintains a local JSON database of every video it has ever encountered. When a scan starts, it fetches the latest activity from your monitored channels and compares signatures to identify "Gaps" in your collection.
