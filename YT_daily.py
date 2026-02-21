@@ -1041,39 +1041,63 @@ class YouTubeFeedDownloader:
         
         return None
 
-    def build_download_command(self, video_url: str, source_name: str, skip_subs: bool = False, is_manual: bool = False, resume: bool = False) -> List[str]:
-        """Build the yt-dlp command for 720p MP4 downloads with resume support."""
+    def build_download_command(self, video_url: str, source_name: str, skip_subs: bool = False, is_manual: bool = False, resume: bool = False, is_audio: bool = False) -> List[str]:
+        """Build the yt-dlp command for video or audio downloads with resume support."""
         
-        output_template = str(self.config.current_video_dir / "%(title)s.%(ext)s")
-        
-        cmd = [
-            "yt-dlp",
-            "-f", f"bestvideo[height<={self.config.max_resolution}]+bestaudio/best[height<={self.config.max_resolution}]",
-            "--merge-output-format", "mp4",
-            "--no-cookies",
-            "--no-cache-dir",
-            "--no-part",
-            "--no-mtime",
-            "--sponsorblock-remove", "sponsor,intro,outro,selfpromo,preview,interaction",
-            "--embed-chapters",
-            "--embed-metadata",
-            "--no-embed-thumbnail",
-            "--no-playlist",
-            "--output", output_template,
-            "--newline",
-            "--no-warnings",
-            "--progress",
-            "--retries", "10",
-            "--fragment-retries", "10",
-            "--file-access-retries", "5", 
-            "--socket-timeout", "30",
-        ]
+        if is_audio:
+            output_template = str(self.config.current_audio_dir / "%(title)s.%(ext)s")
+            cmd = [
+                "yt-dlp",
+                "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                "--extract-audio",
+                "--audio-format", "mp3", 
+                "--audio-quality", "320K",
+                "--no-cookies",
+                "--no-cache-dir",
+                "--no-part",
+                "--no-mtime",
+                "--embed-thumbnail",
+                "--embed-metadata",
+                "--no-playlist",
+                "--output", output_template,
+                "--newline",
+                "--no-warnings",
+                "--progress",
+                "--retries", "10",
+                "--fragment-retries", "10",
+                "--file-access-retries", "5", 
+                "--socket-timeout", "30",
+            ]
+        else:
+            output_template = str(self.config.current_video_dir / "%(title)s.%(ext)s")
+            cmd = [
+                "yt-dlp",
+                "-f", f"bestvideo[height<={self.config.max_resolution}]+bestaudio/best[height<={self.config.max_resolution}]",
+                "--merge-output-format", "mp4",
+                "--no-cookies",
+                "--no-cache-dir",
+                "--no-part",
+                "--no-mtime",
+                "--sponsorblock-remove", "sponsor,intro,outro,selfpromo,preview,interaction",
+                "--embed-chapters",
+                "--embed-metadata",
+                "--no-embed-thumbnail",
+                "--no-playlist",
+                "--output", output_template,
+                "--newline",
+                "--no-warnings",
+                "--progress",
+                "--retries", "10",
+                "--fragment-retries", "10",
+                "--file-access-retries", "5", 
+                "--socket-timeout", "30",
+            ]
         
         # Add resume support if requested
         if resume:
             cmd.append("--continue")
         
-        if not skip_subs:
+        if not skip_subs and not is_audio:
             cmd.extend([
                 "--write-auto-sub",
                 "--write-sub",
@@ -1345,16 +1369,17 @@ class YouTubeFeedDownloader:
             self.logger.warning(f"⚠️ Error checking existing download: {e}")
             return False, 0
 
-    def download_video(self, video_info: Dict[str, Any], source_name: str, is_manual: bool = False, progress: Optional[Progress] = None, task_id: Any = None) -> Tuple[bool, str]:
-        """Download a video from YouTube with progress display, subtitle error handling, and resume support."""
+    def download_video(self, video_info: Dict[str, Any], source_name: str, is_manual: bool = False, progress: Optional[Progress] = None, task_id: Any = None, is_audio: bool = False) -> Tuple[bool, str]:
+        """Download a video (or audio) from YouTube with progress display, subtitle error handling, and resume support."""
         video_id = video_info["id"]
         video_url = video_info["url"]
         video_title = video_info.get("title", "Unknown")
         duration = video_info.get("duration_formatted", "Unknown")
         
         # Check if we can resume this download
-        can_resume, current_resume_progress = self.check_existing_download(video_info, "video")
-        resume_state = self.get_resume_state("video", video_id)
+        download_type = "audio" if is_audio else "video"
+        can_resume, current_resume_progress = self.check_existing_download(video_info, download_type)
+        resume_state = self.get_resume_state(download_type, video_id)
         
         # Show resume status if applicable
         resume_msg = ""
@@ -1380,41 +1405,42 @@ class YouTubeFeedDownloader:
             if resume_msg:
                 grid.add_row("Status:", resume_msg)
                 
-            console.print(Panel(grid, title="[bold green]Downloading Video[/]", border_style="green"))
+            console.print(Panel(grid, title=f"[bold green]Downloading {download_type.capitalize()}[/]", border_style="green"))
             
-            print("   🔍 Checking for subtitles...", end="", flush=True)
+            if not is_audio:
+                print("   🔍 Checking for subtitles...", end="", flush=True)
             
-        has_subtitles = self.check_subtitles_available(video_url)
+        has_subtitles = self.check_subtitles_available(video_url) if not is_audio else False
         
         # Update resume state
         if resume:
-            self.update_resume_state("video", video_id, {
+            self.update_resume_state(download_type, video_id, {
                 "url": video_url,
                 "title": video_title,
                 "source": source_name,
                 "progress": current_resume_progress, # Use the actual integer
-                "type": "video"
+                "type": download_type
             })
         
-        if has_subtitles:
+        if has_subtitles and not is_audio:
             if not progress:
                 print(" ✅ (Subtitles available)")
-            cmd = self.build_download_command(video_url, source_name, skip_subs=False, is_manual=is_manual, resume=resume)
-            success, video_id, error_msg = self._execute_download(cmd, video_info, source_name, is_audio=False, progress=progress, task_id=task_id)
+            cmd = self.build_download_command(video_url, source_name, skip_subs=False, is_manual=is_manual, resume=resume, is_audio=is_audio)
+            success, video_id, error_msg = self._execute_download(cmd, video_info, source_name, is_audio=is_audio, progress=progress, task_id=task_id)
             
             if not success and ("subtitles" in error_msg.lower() or "429" in error_msg):
                 if not progress:
                     print(f"   ⚠️ Subtitle error detected, retrying without subtitles...")
-                cmd = self.build_download_command(video_url, source_name, skip_subs=True, is_manual=is_manual, resume=resume)
-                success, video_id, _ = self._execute_download(cmd, video_info, source_name, is_audio=False, progress=progress, task_id=task_id)
+                cmd = self.build_download_command(video_url, source_name, skip_subs=True, is_manual=is_manual, resume=resume, is_audio=is_audio)
+                success, video_id, _ = self._execute_download(cmd, video_info, source_name, is_audio=is_audio, progress=progress, task_id=task_id)
         else:
-            if not progress:
+            if not progress and not is_audio:
                 print(" ⚠️ (No subtitles available)")
-            cmd = self.build_download_command(video_url, source_name, skip_subs=True, is_manual=is_manual, resume=resume)
-            success, video_id, error_msg = self._execute_download(cmd, video_info, source_name, is_audio=False, progress=progress, task_id=task_id)
+            cmd = self.build_download_command(video_url, source_name, skip_subs=True, is_manual=is_manual, resume=resume, is_audio=is_audio)
+            success, video_id, error_msg = self._execute_download(cmd, video_info, source_name, is_audio=is_audio, progress=progress, task_id=task_id)
         
         if success:
-            if has_subtitles:
+            if has_subtitles and not is_audio:
                 self.cleanup_subtitle_files(video_title, is_manual=is_manual)
             
             if not progress:
@@ -1422,15 +1448,9 @@ class YouTubeFeedDownloader:
             
             features = ["720p HD", "MP4 format", "Private mode", "SponsorBlock"]
             
-            # Print success message only if this was the last specific info printed or if manually requested?
-            # User said: "no need to print this after every single download do it only ofr the last look better"
-            # But in parallel, we don't know which is last easily here.
-            # However, with Rich Progress, individual success prints mess up the bars.
-            # We suppressed them in the 'if not progress:' block above.
-            
-            self._save_download_success(video_info, source_name, video_title)
+            self._save_download_success(video_info, source_name, video_title, is_audio=is_audio)
             # Clear resume state on successful completion
-            self.clear_resume_state("video", video_id)
+            self.clear_resume_state(download_type, video_id)
             
             return True, video_id
         else:
@@ -1490,7 +1510,7 @@ class YouTubeFeedDownloader:
                                 percent = float(progress_dict["percent"])
                                 speed = progress_dict.get("speed", "")
                                 eta = progress_dict.get("eta", "")
-                                progress.update(task_id, completed=percent, description=f"{video_title} [dim]({speed})[/dim]", visible=True)
+                                progress.update(task_id, completed=percent, description=f"{video_title}", speed=f"{speed}", eta=f"{eta}", visible=True)
                         
                         else:
                             # Legacy Print Output
@@ -1602,13 +1622,17 @@ class YouTubeFeedDownloader:
                 check_limit = default_limit
 
         
+        fetch_limit = check_limit
+        if is_new_channel or self.config.ask_video_limit_per_channel:
+            fetch_limit = max(check_limit, 20)
+
         # Get recent videos with the configured limit
         # Use a spinner for visual feedback
         with console.status(f"[bold blue]🔍 Checking {display_name}...[/bold blue]"):
             recent_videos = self.get_all_recent_videos(
                 f"https://www.youtube.com/@{handle}/videos",
                 display_name,
-                max_videos=check_limit,
+                max_videos=fetch_limit,
                 silent=True
             )
         
@@ -1616,6 +1640,15 @@ class YouTubeFeedDownloader:
             console.print(f"[dim]🔍 {display_name}: No new videos[/dim]")
             return []
         
+        if (is_new_channel or self.config.ask_video_limit_per_channel) and len(recent_videos) > check_limit:
+            videos_to_process = recent_videos[:check_limit]
+            videos_to_mark = recent_videos[check_limit:]
+            
+            for v in videos_to_mark:
+                self.update_channel_history(handle, v)
+                
+            recent_videos = videos_to_process
+            
         new_videos_count = 0
         already_downloaded_count = 0
         shorts_skipped = 0
@@ -1782,7 +1815,7 @@ class YouTubeFeedDownloader:
             except ValueError:
                 console.print("   [bold red]❌ Please enter a valid number[/bold red]")
 
-    def process_channel_first_run(self, handle: str, display_name: str, video_limit: int) -> List[Tuple[Dict[str, Any], str, str]]:
+    def process_channel_first_run(self, handle: str, display_name: str, video_limit: int, item_type: str = "channel") -> List[Tuple[Dict[str, Any], str, str]]:
         """Process a channel on first run with limited recent videos."""
         download_tasks = []
         
@@ -1791,22 +1824,32 @@ class YouTubeFeedDownloader:
             console.print(f"[dim]🔍 {display_name}: Skipped (limit 0)[/dim]")
             return []
         
+        fetch_limit = max(video_limit, 20)
+        target_url = f"https://www.youtube.com/@{handle}/videos" if item_type == "channel" else handle
+        
         # Use silent mode to avoid duplicate printing
         with console.status(f"[bold blue]🔍 Scanning {display_name}...[/bold blue]"):
             recent_videos = self.get_all_recent_videos(
-                f"https://www.youtube.com/@{handle}/videos",
+                target_url,
                 display_name,
-                max_videos=video_limit,
+                max_videos=fetch_limit,
                 silent=True  # Don't print from the method itself
             )
         
         if not recent_videos:
             console.print(f"[dim]🔍 {display_name}: No videos found or error[/dim]")
             return []
+            
+        if len(recent_videos) > video_limit:
+            videos_to_process = recent_videos[:video_limit]
+            videos_to_mark = recent_videos[video_limit:]
+            for v in videos_to_mark:
+                self.update_channel_history(handle, v)
+            recent_videos = videos_to_process
         
         # On first run, download all the recent videos we found (up to limit)
         for video_info in recent_videos:
-            download_tasks.append((video_info, display_name, "channel"))
+            download_tasks.append((video_info, display_name, item_type))
         
         # Display results using Tree
         tree = Tree(f"[bold blue]🔍 {display_name}[/bold blue]")
@@ -1846,8 +1889,8 @@ class YouTubeFeedDownloader:
                 TextColumn("[white]{task.description}"),
                 BarColumn(bar_width=None),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                TransferSpeedColumn(),
-                TimeRemainingColumn(),
+                TextColumn("[cyan]{task.fields[speed]:>10}[/cyan]", justify="right"),
+                TextColumn("[yellow]{task.fields[eta]:>5}[/yellow]", justify="right"),
                 console=console,
                 expand=True
             )
@@ -1868,7 +1911,7 @@ class YouTubeFeedDownloader:
                         video_title = video_info.get("title", "Unknown")
                         # Truncate title for display
                         display_title = (video_title[:30] + '...') if len(video_title) > 30 else video_title
-                        task_id = progress.add_task(f"waiting...", source=source_name, total=100, visible=False)
+                        task_id = progress.add_task(f"waiting...", source=source_name, total=100, visible=False, speed="", eta="")
                         
                         future = executor.submit(
                             self.download_video, 
@@ -1966,7 +2009,7 @@ class YouTubeFeedDownloader:
             if self.playlists:
                 console.print(Rule("[bold blue]Checking Playlists[/]"))
                 for url, name in self.playlists.items():
-                    playlist_tasks = self.process_channel_first_run(url, name, videos_per_channel)
+                    playlist_tasks = self.process_channel_first_run(url, name, videos_per_channel, item_type="playlist")
                     all_download_tasks.extend(playlist_tasks)
                     # print()
             
@@ -2310,7 +2353,7 @@ class YouTubeFeedDownloader:
             # Best is to let yt-dlp handle it or do a quick title search.
             
             uploader = video_info_data.get("uploader", "Single Audio")
-            success, _ = self.download_video(video_info_data, uploader, is_manual=True)
+            success, _ = self.download_video(video_info_data, uploader, is_manual=True, is_audio=True)
             if not success:
                 print("❌ Audio download failed")
         else:

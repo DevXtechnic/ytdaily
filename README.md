@@ -32,12 +32,16 @@
 
 ## 🛠️ How it Works: The Architecture
 
+![Workflow Architecture](screenshots/workflow_architecture.png)
+
 `Ytdaily` is built on a "Silent Automation" philosophy. It uses a **State-Based Tracking System** to ensure you never miss a video and never download a duplicate.
 
 ### 1. The Intelligent Monitor
 The engine maintains a local JSON database of every video it has ever encountered. When a scan starts, it fetches the latest activity from your monitored channels and compares signatures to identify "Gaps" in your collection.
 
 ### 2. Parallel Processing Engine
+![Parallel Processing Engine](screenshots/parallel_processing_engine.png)
+
 Unlike traditional downloaders that process one file at a time, `Ytdaily` utilizes a multi-threaded parallel downloader. It intelligently distributes your bandwidth across multiple streams to finish your daily queue in minutes rather than hours.
 
 ### 3. The SponsorBlock Integration
